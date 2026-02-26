@@ -1,44 +1,57 @@
-# Core
+# ─── Hindi Video Dubbing Pipeline — Python Dependencies ───────────────────────
+# Install with: pip install -r requirement.txt
+# For Colab (GPU): pip install -r requirement.txt  (torch is pre-installed)
+
+# ── Core system wrapper ────────────────────────────────────────────────────────
 ffmpeg-python>=0.2.0
 
-# Transcription
-openai-whisper>=20231117
+# ── Transcription ──────────────────────────────────────────────────────────────
+openai-whisper>=20231117         # Whisper base → large-v3
 
-# Translation
-transformers>=4.35.0
-sentencepiece>=0.1.99
-deep-translator>=1.11.4
+# ── Translation ────────────────────────────────────────────────────────────────
+transformers>=4.38.0             # MarianMT en→hi
+sentencepiece>=0.1.99            # MarianMT tokenizer
+deep-translator>=1.11.4          # Google Translate fallback (free, no key)
+sacremoses>=0.1.1                # required by some MarianMT checkpoints
 
-# TTS / Voice Cloning
-TTS>=0.22.0      # Coqui XTTS v2
+# ── TTS / Voice Cloning ────────────────────────────────────────────────────────
+TTS>=0.22.0                      # Coqui XTTS v2 — zero-shot voice cloning
+gTTS>=2.5.0                      # Google TTS fallback (no voice cloning)
 
-# gTTS fallback
-gTTS>=2.5.0
+# ── Audio Processing ───────────────────────────────────────────────────────────
+librosa>=0.10.1                  # time-stretch, resampling
+soundfile>=0.12.1                # WAV I/O
+pydub>=0.25.1                    # silence splitting, chunk merging
+scipy>=1.11.0                    # used by librosa
 
-# Audio processing
-librosa>=0.10.1
-soundfile>=0.12.1
-pydub>=0.25.1
+# ── Video / Image Processing ───────────────────────────────────────────────────
+opencv-python>=4.9.0.80          # frame read/write for face restoration
 
-# Video / Image processing
-opencv-python>=4.9.0.80
+# ── Face Restoration ───────────────────────────────────────────────────────────
+gfpgan>=1.3.8                    # GFPGAN v1.4 face restoration
+basicsr>=1.4.2                   # backbone for GFPGAN and CodeFormer
+facexlib>=0.3.0                  # face detection helper
+realesrgan>=0.3.0                # optional background upscaler
 
-# Face Restoration
-gfpgan>=1.3.8
-basicsr>=1.4.2
-facexlib>=0.3.0
-realesrgan>=0.3.0
-
-# Utilities
-gdown>=4.7.3     # for downloading Wav2Lip weights
-numpy>=1.24.0
+# ── Deep Learning ──────────────────────────────────────────────────────────────
+# NOTE: For CPU-only machines, replace torch with:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 torch>=2.0.0
 torchvision>=0.15.0
+
+# ── Utilities ──────────────────────────────────────────────────────────────────
+gdown>=4.7.3                     # download Wav2Lip pretrained weights from GDrive
+numpy>=1.24.0
 tqdm>=4.66.0
 Pillow>=10.0.0
 imageio>=2.34.0
 imageio-ffmpeg>=0.4.9
-scipy>=1.11.0
 
-# Optional (for Jupyter/Colab notebook)
+# ── Optional: Jupyter / Colab ──────────────────────────────────────────────────
 ipywidgets>=8.0.0
+
+# ── Optional: IndicTrans2 (better Hindi quality than MarianMT) ─────────────────
+# Uncomment to install — requires ~2GB disk space
+# git+https://github.com/AI4Bharat/IndicTransToolkit.git
+# indic-nlp-library>=0.92
+
