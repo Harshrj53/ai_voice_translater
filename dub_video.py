@@ -81,6 +81,7 @@ def step_extract(m, args, work_dir: str) -> dict[str, str]:
     """Step 1: Extract the 15-second video/audio segment."""
     logger.info("=" * 60)
     logger.info("STEP 1: Extracting segment ...")
+    t0 = time.time()
     paths = m["extract_segment"](
         video_path=args.input,
         start_sec=args.start,
@@ -91,14 +92,18 @@ def step_extract(m, args, work_dir: str) -> dict[str, str]:
     logger.info(f"  ✓ Clip    : {paths['video']}")
     logger.info(f"  ✓ Audio   : {paths['audio']}")
     logger.info(f"  ✓ Ref Wav : {paths['ref_audio']}")
+    logger.info(f"  ⏱  {time.time() - t0:.1f}s")
     return paths
 
 
 def step_transcribe(m, args, audio_path: str, work_dir: str):
-    """Step 2: Transcribe English audio with Whisper."""
+    """Step 2: Transcribe audio with Whisper (auto-detects language, translates to English)."""
     logger.info("=" * 60)
-    logger.info("STEP 2: Transcribing with Whisper ...")
+    logger.info("STEP 2: Transcribing with Whisper (translate → English) ...")
+    t0 = time.time()
     out_dir = os.path.join(work_dir, "02_transcribe")
+
+    src_lang = getattr(args, "src_lang", None)  # None = auto-detect
 
     if args.long_audio:
         result = m["transcribe_long_audio"](
@@ -110,13 +115,17 @@ def step_transcribe(m, args, audio_path: str, work_dir: str):
         result = m["transcribe_audio"](
             audio_path=audio_path,
             model_size=args.whisper_model,
+            language=src_lang,     # None → auto-detect
+            task="translate",      # always translate to English first
             output_dir=out_dir,
         )
 
     logger.info(f"  ✓ Detected language : {result.language}")
     logger.info(f"  ✓ Segments          : {len(result.segments)}")
     logger.info(f"  ✓ Full text         : {result.full_text[:120]}...")
+    logger.info(f"  ⏱  {time.time() - t0:.1f}s")
     return result
+
 
 
 def step_translate(m, args, transcript, work_dir: str):
@@ -314,8 +323,9 @@ def run_pipeline(args) -> str:
 
     elapsed = time.time() - start_time
     logger.info("=" * 60)
-    logger.info(f"✅ PIPELINE COMPLETE in {elapsed:.1f}s")
-    logger.info(f"✅ Output: {args.output}")
+    logger.info(f"✅ PIPELINE COMPLETE in {elapsed:.1f}s ({elapsed/60:.1f} min)")
+    logger.info(f"✅ Output : {args.output}")
+    logger.info(f"✅ Clip   : {args.start}s — {args.end}s ({args.end - args.start}s)")
     logger.info("=" * 60)
 
     return args.output

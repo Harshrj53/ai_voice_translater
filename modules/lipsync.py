@@ -30,12 +30,15 @@ logger = logging.getLogger(__name__)
 
 # Wav2Lip repository and model weight URLs
 _WAV2LIP_REPO_URL = "https://github.com/Rudrabha/Wav2Lip.git"
-_WAV2LIP_MODEL_URL = (
-    "https://iiitaphyd-my.sharepoint.com/personal/radrabha_m_research_iiit_ac_in/"
-    "_layouts/15/download.aspx?share=EdjI7bZlgApMqsVoEUUXpLsBxqXbn5z64TnOrYy_u1AkTg"
-)
-# Simplified wget-accessible mirror (via a public gdown link)
+
+# Primary: gdown from Google Drive
 _WAV2LIP_GDRIVE_ID = "1HCNBBsKKV8Ij2QMqzn5BLTJmJPH1VZDO"
+
+# Fallback: HuggingFace public mirror (wget-accessible, no auth needed)
+_WAV2LIP_MODEL_URL = (
+    "https://huggingface.co/numz/wav2lip_studio/resolve/main/"
+    "Wav2Lip/checkpoints/wav2lip_gan.pth"
+)
 
 # VideoReTalking (higher fidelity alternative)
 _VIDEORETALKING_REPO_URL = "https://github.com/OpenTalker/video-retalking.git"
@@ -44,6 +47,11 @@ _VIDEORETALKING_REPO_URL = "https://github.com/OpenTalker/video-retalking.git"
 def _ensure_wav2lip(base_dir: str) -> str:
     """
     Clone Wav2Lip repo and download pretrained weights if not already present.
+
+    Download attempts (in order):
+      1. gdown (Google Drive)        — works on most machines
+      2. wget direct URL             — Colab-friendly fallback
+      3. Manual instruction          — clear error if both fail
 
     Returns:
         Path to the Wav2Lip repository root
@@ -64,17 +72,42 @@ def _ensure_wav2lip(base_dir: str) -> str:
     checkpoint_dir = os.path.join(wav2lip_dir, "checkpoints")
     os.makedirs(checkpoint_dir, exist_ok=True)
     model_path = os.path.join(checkpoint_dir, "wav2lip_gan.pth")
+    _MIN_MODEL_SIZE_MB = 400     # sanity-check: model should be ≥400 MB
 
-    if not os.path.exists(model_path):
-        logger.info("[lipsync] Downloading Wav2Lip GAN weights via gdown ...")
+    def _is_valid(path: str) -> bool:
+        return os.path.exists(path) and os.path.getsize(path) > _MIN_MODEL_SIZE_MB * 1_000_000
+
+    if not _is_valid(model_path):
+        logger.info("[lipsync] Downloading Wav2Lip GAN weights ...")
+
+        # ── Attempt 1: gdown ─────────────────────────────────────────────
         try:
             import gdown
+            logger.info("[lipsync]  → Attempt 1: gdown (Google Drive)")
             gdown.download(id=_WAV2LIP_GDRIVE_ID, output=model_path, quiet=False)
-        except ImportError:
-            raise ImportError(
-                "gdown is required to download model weights. "
-                "Run: pip install gdown"
+        except Exception as e:
+            logger.warning(f"[lipsync] gdown failed: {e}")
+
+        # ── Attempt 2: wget direct URL ───────────────────────────────────
+        if not _is_valid(model_path):
+            logger.info("[lipsync]  → Attempt 2: wget (direct URL)")
+            wget_result = subprocess.run(
+                ["wget", "-q", "-O", model_path, _WAV2LIP_MODEL_URL],
+                capture_output=True,
             )
+            if wget_result.returncode != 0:
+                logger.warning("[lipsync] wget also failed")
+
+        # ── Total failure ────────────────────────────────────────────────
+        if not _is_valid(model_path):
+            raise RuntimeError(
+                "Failed to download Wav2Lip weights automatically.\n"
+                "Manual download steps:\n"
+                "  1. Visit: https://github.com/Rudrabha/Wav2Lip#models\n"
+                "  2. Download 'Wav2Lip + GAN' checkpoint\n"
+                f"  3. Save to: {model_path}"
+            )
+
         logger.info(f"[lipsync] Model weights saved → {model_path}")
     else:
         logger.info(f"[lipsync] Wav2Lip weights already cached: {model_path}")

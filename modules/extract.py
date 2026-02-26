@@ -84,19 +84,28 @@ def extract_segment(
     logger.info(f"[extract] Segment video saved → {clip_video_path}")
 
     # ── 2. Extract audio as 16 kHz mono WAV (Whisper-optimal) ─────────────────
+    # IMPORTANT: extract from the ORIGINAL video at source timestamps, NOT from
+    # the re-encoded clip. AAC re-encoding can reduce volume by ~8 dB, causing
+    # Whisper to miss speech.
+    # dynaudnorm: reliable single-pass dynamic normalizer (loudnorm needs 2 passes
+    # and gives inconsistent results in single-pass mode on some audio sources).
     _run_ffmpeg(
         [
             "ffmpeg", "-y",
-            "-i", clip_video_path,
-            "-vn",                  # no video
-            "-acodec", "pcm_s16le", # 16-bit PCM
-            "-ar", "16000",         # 16 kHz sample rate
-            "-ac", "1",             # mono channel
+            "-ss", str(start_sec),         # seek in original (lossless seek)
+            "-i", video_path,              # original source — NOT the re-encoded clip
+            "-t", str(duration),
+            "-vn",                         # no video
+            "-acodec", "pcm_s16le",        # 16-bit PCM
+            "-ar", "16000",                # 16 kHz (Whisper optimal)
+            "-ac", "1",                    # mono
+            "-af", "dynaudnorm=p=0.9:s=5", # single-pass dynamic normalization
             clip_audio_path,
         ],
         "extract 16kHz mono WAV",
     )
     logger.info(f"[extract] Audio WAV saved → {clip_audio_path}")
+
 
     # ── 3. Extract a reference audio clip for voice cloning ───────────────────
     # We grab the first 5s of the segment as the speaker reference for XTTS

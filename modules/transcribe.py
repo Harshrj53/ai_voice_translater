@@ -74,20 +74,24 @@ class TranscriptionResult:
 def transcribe_audio(
     audio_path: str,
     model_size: str = "base",
-    language: str = "en",
+    language: Optional[str] = None,
+    task: str = "translate",
     output_dir: Optional[str] = None,
     use_word_timestamps: bool = True,
 ) -> TranscriptionResult:
     """
-    Transcribe audio using Whisper.
+    Transcribe (or translate) audio using Whisper.
 
     Args:
         audio_path          : Path to WAV/MP3 audio file
         model_size          : Whisper model size: tiny/base/small/medium/large-v3
-                              (base is default — fast on CPU, good accuracy)
-        language            : Source language code (e.g. "en")
+        language            : Source language code (e.g. "en", "kn", "hi").
+                              Set to None (default) to auto-detect.
+        task                : "transcribe" keeps the original language.
+                              "translate" (default) converts any language → English,
+                              which is required before MarianMT en→hi translation.
         output_dir          : If provided, saves transcript.json to this directory
-        use_word_timestamps : Enable word-level timestamps (requires Whisper ≥ 20230918)
+        use_word_timestamps : Enable word-level timestamps
 
     Returns:
         TranscriptionResult with full text and timed segments
@@ -106,13 +110,21 @@ def transcribe_audio(
     logger.info(f"[transcribe] Loading Whisper model: {model_size}")
     model = whisper.load_model(model_size)
 
-    logger.info(f"[transcribe] Transcribing: {audio_path}")
-    result = model.transcribe(
-        audio_path,
-        language=language,
-        word_timestamps=use_word_timestamps,
+    logger.info(
+        f"[transcribe] Transcribing: {audio_path} "
+        f"(language={language or 'auto'}, task={task})"
+    )
+    whisper_kwargs = dict(
+        task=task,
+        # word-level timestamps are unreliable for translate task and cause
+        # Whisper to return 0 segments — only enable for plain transcription
+        word_timestamps=(use_word_timestamps and task != "translate"),
         verbose=False,
     )
+    if language:                         # only lock language if explicitly given
+        whisper_kwargs["language"] = language
+
+    result = model.transcribe(audio_path, **whisper_kwargs)
 
     # ── Parse segments ────────────────────────────────────────────────────────
     segments: list[Segment] = []

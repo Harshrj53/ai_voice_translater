@@ -166,8 +166,16 @@ def stretch_to_duration(
 
     stretch_rate = current_duration / target_duration_sec
     # librosa time_stretch: rate > 1 → speeds up, rate < 1 → slows down
-    # We clamp to reasonable range to avoid distortion
-    stretch_rate = float(np.clip(stretch_rate, 0.5, 2.0))
+    # Wider clamp (0.4x–2.5x) consistent with config.STRETCH_MIN/MAX_RATE.
+    # Below 0.4x or above 2.5x the pitch-vocoder artifacts become audible.
+    clamped = float(np.clip(stretch_rate, 0.4, 2.5))
+    if clamped != stretch_rate:
+        logger.warning(
+            f"[tts] Stretch rate {stretch_rate:.3f}x clamped to {clamped:.3f}x — "
+            "translation is very much longer/shorter than original. "
+            "Consider a tighter translation for better sync."
+        )
+    stretch_rate = clamped
 
     logger.info(
         f"[tts] Stretching audio: {current_duration:.2f}s → {target_duration_sec:.2f}s "
