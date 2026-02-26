@@ -1,4 +1,4 @@
-# Python
+# ─── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
@@ -10,30 +10,32 @@ dist/
 build/
 .eggs/
 
-# Virtual environments
+# ─── Virtual Environments ─────────────────────────────────────────────────────
 venv/
 .venv/
 env/
 ENV/
+ml_env/          # project virtualenv (Python 3.13)
 .env
 
-# Model weights (large files — download at runtime)
+# ─── Model Weights (large files — downloaded at runtime) ──────────────────────
 checkpoints/
 *.pth
 *.pt
 *.onnx
 *.h5
+*.bin
 Wav2Lip/
 video-retalking/
 CodeFormer/
 GFPGANv1.4.pth
+models/
 
-# Intermediate pipeline files
+# ─── Pipeline Working Directories ─────────────────────────────────────────────
 dub_workspace_*/
 debug_output/
-/tmp/
 
-# Audio / Video files (don't commit large media)
+# ─── Large Media Files (don't commit, download/generate at runtime) ───────────
 *.mp4
 *.avi
 *.mov
@@ -41,15 +43,17 @@ debug_output/
 *.wav
 *.mp3
 *.flac
+test_video.mp4      # source test video (re-downloaded via gdown)
+output_*.mp4        # generated output videos
 
-# Except example output (small file is OK)
+# Allow small sample outputs to be committed if needed
 !output_sample*.mp4
 
-# Jupyter
+# ─── Jupyter ──────────────────────────────────────────────────────────────────
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
-# IDE
+# ─── IDE / OS ─────────────────────────────────────────────────────────────────
 .idea/
 .vscode/
 *.swp
@@ -57,9 +61,12 @@ debug_output/
 .DS_Store
 Thumbs.db
 
-# Logs
+# ─── Logs ─────────────────────────────────────────────────────────────────────
 *.log
 pip-log.txt
 
-# Colab auto-generated
+# ─── Colab auto-generated ─────────────────────────────────────────────────────
 sample_data/
+
+# ─── HuggingFace cache (can be large) ────────────────────────────────────────
+.cache/
