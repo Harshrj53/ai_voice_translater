@@ -29,8 +29,6 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Literal
 
-import cv2  # type: ignore
-
 logger = logging.getLogger(__name__)
 
 # GFPGAN model weight download URL (official release)
@@ -76,6 +74,7 @@ def _ensure_gfpgan(models_dir: str) -> str:
 def enhance_frame_gfpgan(
     frame: "np.ndarray",
     restorer,
+    cv2_module=None,
 ) -> "np.ndarray":
     """
     Enhance a single BGR frame using the GFPGAN restorer.
@@ -152,6 +151,10 @@ def _enhance_with_gfpgan(
     Run GFPGAN frame-by-frame on the video and re-encode with original audio.
     """
     import numpy as np
+    try:
+        import cv2  # type: ignore
+    except ImportError:
+        raise ImportError("opencv-python is not installed. Run: pip install opencv-python")
 
     try:
         from gfpgan import GFPGANer
