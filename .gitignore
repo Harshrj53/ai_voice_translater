@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+.env
+
+# Model weights (large files — download at runtime)
+checkpoints/
+*.pth
+*.pt
+*.onnx
+*.h5
+Wav2Lip/
+video-retalking/
+CodeFormer/
+GFPGANv1.4.pth
+
+# Intermediate pipeline files
+dub_workspace_*/
+debug_output/
+/tmp/
+
+# Audio / Video files (don't commit large media)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wav
+*.mp3
+*.flac
+
+# Except example output (small file is OK)
+!output_sample*.mp4
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+pip-log.txt
+
+# Colab auto-generated
+sample_data/
